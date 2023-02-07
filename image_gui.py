@@ -18,7 +18,8 @@ up_factor = 4
 class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.selection = 'Content-Loss'
+        self.fix_selection = 'RGB Correction'
+        self.selection = 'RGB Content-Loss'
         self.lowres_img = None
         self.lowres_input = None
         self.tmp = None
@@ -67,6 +68,9 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_2.addWidget(self.pushButton)
+        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
+        self.pushButton_4.setObjectName("pushButton_4")
+        self.horizontalLayout_2.addWidget(self.pushButton_4)
         self.gridLayout.addLayout(self.horizontalLayout_2, 1, 0, 1, 1)
         self.gridLayout_3.addLayout(self.horizontalLayout_4, 0, 0, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
@@ -77,8 +81,8 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         MainWindow.setStatusBar(self.statusBar)
 
         self.combobox1 = QtWidgets.QComboBox(self.centralwidget)
-        self.combobox1.setFixedSize(300,60)
-        self.combobox1.move(30, -10)
+        self.combobox1.setFixedSize(200,60)
+        self.combobox1.move(10, -10)
         self.combobox1.addItem('RGB Content-Loss')
         self.combobox1.addItem('RGB MSE')
         self.combobox1.addItem('YCbCr Content-Loss')
@@ -87,11 +91,19 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.combobox1.addItem('YCbCr GAN Perceptual-Loss')
         self.combobox1.currentTextChanged.connect(self.text_check)
 
+        self.combobox2 = QtWidgets.QComboBox(self.centralwidget)
+        self.combobox2.setFixedSize(150, 60)
+        self.combobox2.move(210, -10)
+        self.combobox2.addItem('RGB Correction')
+        self.combobox2.addItem('YCbCr Correction')
+        self.combobox2.currentTextChanged.connect(self.fix_text_check)
 
         self.retranslateUi(MainWindow)
         self.pushButton_2.clicked.connect(self.loadImage)
         self.pushButton.clicked.connect(self.superres)
         self.pushButton_3.clicked.connect(self.bicubic)
+        self.pushButton_4.clicked.connect(self.img_fix)
+
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 
@@ -99,8 +111,12 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.tmp = None  # Will hold the temporary image for display
 
     def text_check(self, s):
-        print("Text changed:", s)
+        print("Model loss text changed:", s)
         self.selection = s
+
+    def fix_text_check(self, s):
+        print("Fix text changed:", s)
+        self.fix_selection = s
 
     def loadImage(self):
 
@@ -238,12 +254,16 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         plt.savefig(filename + 'Bicubic' + '.png')
         plt.show()
 
+    def img_fix(self):
+        pass
+
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Image SuperRezzer"))
         self.pushButton_2.setText(_translate("MainWindow", "Open"))
         self.pushButton.setText(_translate("MainWindow", "SuperRes Image"))
         self.pushButton_3.setText(_translate("MainWindow", "Bicubic Image"))
+        self.pushButton_4.setText(_translate("MainWindow", "Fix Image"))
 
 
 
