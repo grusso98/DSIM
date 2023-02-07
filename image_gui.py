@@ -103,9 +103,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.selection = s
 
     def loadImage(self):
-        """ This function will load the user selected image
-            and set it to label using the setPhoto function
-        """
+
         self.filename = QFileDialog.getOpenFileName(filter="Image (*.*)")[0]
         self.image = tf.keras.preprocessing.image.load_img(self.filename)
         self.image = tf.keras.preprocessing.image.img_to_array(self.image)
@@ -140,6 +138,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.filename = QFileDialog.getOpenFileName(filter="Image (*.*)")[0]
         self.image = tf.keras.preprocessing.image.load_img(self.filename)
+        highres_img_arr = tf.keras.preprocessing.image.img_to_array(self.image)
         self.lowres_input = utils.get_lowres_image(self.image, self.upfactor)
 
         if self.selection == 'RGB Content-Loss':
@@ -169,13 +168,14 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel)
         print(self.prediction)
         img_array = tf.keras.preprocessing.image.img_to_array(self.prediction)
+        sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
         img_array = img_array.astype("float32") / 255.0
 
         # Create a new figure with a default 111 subplot.
         fig, ax = plt.subplots()
         im = ax.imshow(img_array[::-1], origin="lower")
 
-        plt.title('SuperRezzed with '+self.selection)
+        plt.title('SuperRezzed with '+ self.selection + '| PSNR: '+ str(sr_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
         axins = zoomed_inset_axes(ax, 2, loc=2)
@@ -206,17 +206,20 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         w = self.lowres_input.size[0] * up_factor
         h = self.lowres_input.size[1] * up_factor
         self.lowres_img = self.lowres_input.resize((w, h))
-        img_array = tf.keras.preprocessing.image.img_to_array(self.lowres_img)
-        img_array = img_array.astype("float32") / 255.0
+        lowres_img_array = tf.keras.preprocessing.image.img_to_array(self.lowres_img)
+        highres_img_arr = tf.keras.preprocessing.image.img_to_array(self.image)
+        bicubic_psnr = tf.image.psnr(lowres_img_array, highres_img_arr, max_val=255)
+        lowres_img_array = lowres_img_array.astype("float32") / 255.0
+        print(bicubic_psnr)
         # Create a new figure with a default 111 subplot.
         fig, ax = plt.subplots()
-        im = ax.imshow(img_array[::-1], origin="lower")
-
-        plt.title('Bicubic')
+        im = ax.imshow(lowres_img_array[::-1], origin="lower")
+        print(bicubic_psnr.numpy())
+        plt.title('Bicubic PSNR: ' + str(bicubic_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
         axins = zoomed_inset_axes(ax, 2, loc=2)
-        axins.imshow(img_array[::-1], origin="lower")
+        axins.imshow(lowres_img_array[::-1], origin="lower")
 
         # Specify the limits.
         x1, x2, y1, y2 = 200, 300, 100, 200
