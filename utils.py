@@ -60,7 +60,7 @@ def get_lowres_image(img, upscale_factor=4):
     )
 
 
-def upscale_image(model, img, channels="rgb"):
+def upscale_image(model, img, channels="rgb", fix='None'):
     """Predict the result based on input image and restore the image as RGB."""
     up_factor = 4
     if channels == "rgb":
@@ -99,6 +99,10 @@ def upscale_image(model, img, channels="rgb"):
         out_img_cr = cr.resize(out_img_y.size, PIL.Image.BICUBIC)
         out_img = PIL.Image.merge("YCbCr", (out_img_y, out_img_cb, out_img_cr)).convert(
             "RGB")
+    if fix == 'RGB correction':
+        pass
+    if fix == 'YCbCr correction':
+        pass
     return out_img
 
 def upsample(x_lr, r):
