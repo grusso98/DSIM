@@ -18,6 +18,7 @@ up_factor = 4
 class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
+        self.correction = 'None'
         self.fix_selection = 'RGB Correction'
         self.selection = 'RGB Content-Loss'
         self.lowres_img = None
@@ -37,7 +38,6 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-
         self.gridLayout_3 = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout_3.setObjectName("gridLayout_3")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.centralwidget)
@@ -46,6 +46,11 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.gridLayout.setObjectName("gridLayout")
         self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+
+        self.horizontalLayout_6 = QtWidgets.QVBoxLayout()
+        self.horizontalLayout_6.setObjectName("horizontalLayout_6")
+
+
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setText("")
         self.label.setObjectName("label")
@@ -55,6 +60,12 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.horizontalLayout_3.addLayout(self.horizontalLayout)
         self.gridLayout.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
+
+        self.gridLayout.addLayout(self.horizontalLayout_6, 1, 1, 1, 1)
+        l1 = QtWidgets.QLabel()
+        l1.setText("Color+Gamma correction for SRGAN:")
+        self.horizontalLayout_6.addWidget(l1)
+
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
         self.horizontalLayout_2.setObjectName("horizontalLayout_2")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout()
@@ -68,9 +79,6 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.pushButton = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton.setObjectName("pushButton")
         self.horizontalLayout_2.addWidget(self.pushButton)
-        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_4.setObjectName("pushButton_4")
-        self.horizontalLayout_2.addWidget(self.pushButton_4)
         self.gridLayout.addLayout(self.horizontalLayout_2, 1, 0, 1, 1)
         self.gridLayout_3.addLayout(self.horizontalLayout_4, 0, 0, 1, 1)
         self.gridLayout_2.addLayout(self.gridLayout, 0, 0, 1, 1)
@@ -82,7 +90,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.combobox1 = QtWidgets.QComboBox(self.centralwidget)
         self.combobox1.setFixedSize(200,60)
-        self.combobox1.move(10, -10)
+        self.combobox1.move(15, 1)
         self.combobox1.addItem('RGB Content-Loss')
         self.combobox1.addItem('RGB MSE')
         self.combobox1.addItem('YCbCr Content-Loss')
@@ -91,18 +99,29 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.combobox1.addItem('YCbCr GAN Perceptual-Loss')
         self.combobox1.currentTextChanged.connect(self.text_check)
 
-        self.combobox2 = QtWidgets.QComboBox(self.centralwidget)
-        self.combobox2.setFixedSize(150, 60)
-        self.combobox2.move(210, -10)
-        self.combobox2.addItem('RGB Correction')
-        self.combobox2.addItem('YCbCr Correction')
-        self.combobox2.currentTextChanged.connect(self.fix_text_check)
+        self.radiobutton = PyQt5.QtWidgets.QRadioButton("RGB correction")
+        self.radiobutton.setChecked(False)
+        self.radiobutton.selection = "RGB correction"
+        self.radiobutton.toggled.connect(self.onClicked)
+        self.horizontalLayout_6.addWidget(self.radiobutton)
+
+        self.radiobutton = PyQt5.QtWidgets.QRadioButton("YCbCr correction")
+        self.radiobutton.setChecked(False)
+        self.radiobutton.selection = "YCbCr correction"
+        self.radiobutton.toggled.connect(self.onClicked)
+        self.horizontalLayout_6.addWidget(self.radiobutton)
+
+        self.radiobutton = PyQt5.QtWidgets.QRadioButton("None")
+        self.radiobutton.setChecked(True)
+        self.radiobutton.selection = "None"
+        self.radiobutton.toggled.connect(self.onClicked)
+        self.horizontalLayout_6.addWidget(self.radiobutton)
+
 
         self.retranslateUi(MainWindow)
         self.pushButton_2.clicked.connect(self.loadImage)
         self.pushButton.clicked.connect(self.superres)
         self.pushButton_3.clicked.connect(self.bicubic)
-        self.pushButton_4.clicked.connect(self.img_fix)
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
@@ -110,6 +129,11 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.filename = None  # Will hold the image address location
         self.tmp = None  # Will hold the temporary image for display
 
+    def onClicked(self):
+        radioButton = self.sender()
+        if radioButton.isChecked():
+            print("Radio button on %s" % (radioButton.selection))
+        self.correction = radioButton.selection
     def text_check(self, s):
         print("Model loss text changed:", s)
         self.selection = s
@@ -263,7 +287,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.pushButton_2.setText(_translate("MainWindow", "Open"))
         self.pushButton.setText(_translate("MainWindow", "SuperRes Image"))
         self.pushButton_3.setText(_translate("MainWindow", "Bicubic Image"))
-        self.pushButton_4.setText(_translate("MainWindow", "Fix Image"))
+
 
 
 

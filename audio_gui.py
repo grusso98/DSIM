@@ -91,13 +91,11 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
     def audio_single(self):
         self.filename = QFileDialog.getOpenFileName()[0]
-        last_slash = [m.start() for m in re.finditer('/', self.filename)]
-        utils.audio(self.filename[0:last_slash[-1]], type="single")
+        utils.audio(self.filename, type="single")
 
     def audio_multi(self):
         self.filename = QFileDialog.getOpenFileName(filter="Image (*.*)")[0]
-        last_slash = [m.start() for m in re.finditer('/', self.filename)]
-        utils.audio(self.filename[0:last_slash[-1]], type="multi")
+        utils.audio(self.filename, type="multi")
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate

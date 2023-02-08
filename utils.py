@@ -1,4 +1,5 @@
 import os
+import re
 from random import random
 
 import tensorflow as tf
@@ -206,6 +207,7 @@ def load_wav_list(dirname):
             full_filename = os.path.join(dirname, filename)
             file_list.append(full_filename)
 
+
     print('load flac list examples..')
 
     for i, file in enumerate(file_list):
@@ -218,15 +220,18 @@ def load_wav_list(dirname):
 def audio(audio_path, type):
     BATCH_SIZE = 256
     LOAD_WEIGHTS = True
-    WEIGHTS_PATH = 'models/'
+    WEIGHTS_PATH = 'models/audio_models/'
 
+    last_slash = [m.start() for m in re.finditer('/', audio_path)]
+    audio_path = audio_path[0:last_slash[-1]]
+    print('path: ' + audio_path)
     if type == "single":
         WEIGHTS_FILE = 'asr-weights-k32.hdf5'
         model = base_model(summary=False)
         model = load_model(model, os.path.join(WEIGHTS_PATH, WEIGHTS_FILE), load_weights=LOAD_WEIGHTS)
         model = compile_model(model)
     if type == "multi":
-        WEIGHTS_FILE = 'asr-weights-multi2.hdf5'
+        WEIGHTS_FILE = 'asr-weights-4multi-stride256.hdf5'
         model = base_model(summary=False)
         model = load_model(model, os.path.join(WEIGHTS_PATH, WEIGHTS_FILE), load_weights=LOAD_WEIGHTS)
         model = compile_model(model)
@@ -255,9 +260,9 @@ def audio(audio_path, type):
     print(snr_spline)
     print(snr_sr)
     audio_path = audio_path + type
-    sf.write('/original.wav', Y.flatten(), 48000, 'PCM_24')
-    sf.write('downsampled.wav', X.flatten(), 48000, 'PCM_24')
-    sf.write('superrezzed.wav', pred.flatten(), 48000, 'PCM_24')
+    sf.write(audio_path + 'original.flac', Y.flatten(), 48000, 'PCM_24')
+    sf.write(audio_path + 'downsampled.flac', X.flatten(), 48000, 'PCM_24')
+    sf.write(audio_path +'superrezzed.flac', pred.flatten(), 48000, 'PCM_24')
 
 def split(x):
     return x[:, 28:36]  # it is fixed range for input(64) & output(8) dataset
