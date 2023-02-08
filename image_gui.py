@@ -205,7 +205,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
             channel = 'ycbcr'
             pass
 
-        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel)
+        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel, fix=self.fix_selection)
         print(self.prediction)
         img_array = tf.keras.preprocessing.image.img_to_array(self.prediction)
         sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
