@@ -18,8 +18,7 @@ up_factor = 4
 class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-        self.correction = 'None'
-        self.fix_selection = 'RGB Correction'
+        self.fix_selection = 'None'
         self.selection = 'RGB Content-Loss'
         self.lowres_img = None
         self.lowres_input = None
@@ -63,7 +62,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         self.gridLayout.addLayout(self.horizontalLayout_6, 1, 1, 1, 1)
         l1 = QtWidgets.QLabel()
-        l1.setText("Color+Gamma correction for SRGAN:")
+        l1.setText("Color adjustment for SRGAN:")
         self.horizontalLayout_6.addWidget(l1)
 
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
@@ -133,14 +132,11 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         radioButton = self.sender()
         if radioButton.isChecked():
             print("Radio button on %s" % (radioButton.selection))
-        self.correction = radioButton.selection
+        self.fix_selection = radioButton.selection
     def text_check(self, s):
         print("Model loss text changed:", s)
         self.selection = s
 
-    def fix_text_check(self, s):
-        print("Fix text changed:", s)
-        self.fix_selection = s
 
     def loadImage(self):
 
@@ -180,7 +176,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         self.image = tf.keras.preprocessing.image.load_img(self.filename)
         highres_img_arr = tf.keras.preprocessing.image.img_to_array(self.image)
         self.lowres_input = utils.get_lowres_image(self.image, self.upfactor)
-
+        name = 'None'
         if self.selection == 'RGB Content-Loss':
             self.model = keras.models.load_model('models/img_models/rgb_crop_CL_50_x4.h5', compile=False)
             channel = 'rgb'
@@ -199,14 +195,24 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
         if self.selection == 'RGB GAN Perceptual-Loss':
             self.model = keras.models.load_model('models/img_models/generator_x4.h5', compile=False)
+            name = 'RGB GAN Perceptual-Loss'
             channel = "rgb"
 
         if self.selection == 'YCbCr GAN Perceptual-Loss':
+            name = 'YCbCr GAN'
             channel = 'ycbcr'
             pass
 
-        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel, fix=self.fix_selection)
-        print(self.prediction)
+        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel, fix=self.fix_selection,
+                                              model_name=name)
+
+        if (self.fix_selection == 'RGB correction') and (self.selection == 'RGB GAN Perceptual-Loss'):
+            print('rgb gan fix function')
+
+        #if fix == 'YCbCr correction' and model_name == 'YCbCr GAN Perceptual-Loss':
+        #    print('ycbcr gan fix function')
+        #    pass
+
         img_array = tf.keras.preprocessing.image.img_to_array(self.prediction)
         sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
         img_array = img_array.astype("float32") / 255.0
@@ -215,7 +221,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         fig, ax = plt.subplots()
         im = ax.imshow(img_array[::-1], origin="lower")
 
-        plt.title('SuperRezzed with '+ self.selection + '| PSNR: '+ str(sr_psnr.numpy()))
+        plt.title('SuperRezzed with '+ self.selection + ' | PSNR: '+ str(sr_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
         axins = zoomed_inset_axes(ax, 2, loc=2)
