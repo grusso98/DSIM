@@ -227,7 +227,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         fig, ax = plt.subplots()
         im = ax.imshow(img_array[::-1], origin="lower")
 
-        plt.title('SuperRezzed with '+ self.selection + ' | PSNR: ' + str(sr_psnr.numpy()))
+        plt.title('SR with '+ self.selection + ' | PSNR: ' + str(sr_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
         axins = zoomed_inset_axes(ax, 2, loc=2)
@@ -246,7 +246,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         # Make the line.
         mark_inset(ax, axins, loc1=1, loc2=3, fc="none", ec="blue")
 
-        filename = QFileDialog.getSaveFileName(filter="JPG(*.jpg);;PNG(*.png);;TIFF(*.tiff);;BMP(*.bmp)")[0]
+        filename = QFileDialog.getSaveFileName(filter="JPG(*.jpg);;PNG(*.png);;TIFF(*.tiff);;BMP(*.bmp);;JPEG(*.jpeg)")[0]
         plt.savefig(filename+'superrezzed'+'.png')
         plt.show()
 
@@ -262,11 +262,12 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
         highres_img_arr = tf.keras.preprocessing.image.img_to_array(self.image)
         bicubic_psnr = tf.image.psnr(lowres_img_array, highres_img_arr, max_val=255)
         lowres_img_array = lowres_img_array.astype("float32") / 255.0
-        print(bicubic_psnr)
+
+       # print(bicubic_psnr)
         # Create a new figure with a default 111 subplot.
         fig, ax = plt.subplots()
         im = ax.imshow(lowres_img_array[::-1], origin="lower")
-        print(bicubic_psnr.numpy())
+        #print(bicubic_psnr.numpy())
         plt.title('Bicubic PSNR: ' + str(bicubic_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
