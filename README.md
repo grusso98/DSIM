@@ -7,7 +7,12 @@ Authors: Gaetano Chiriaco, Riccardo Porcedda, Gianmarco Russo | Data Science MSc
 
 - *audio_gui.py* contains all the demo for the audio files.
 
-- *utils.py contains* all the utilty functions that provide infos to the gui.
+- *utils.py contains* all the utility functions that provide infos to the gui.
 
 Be sure to install all the libraries indicated in requirements.txt
+
+# Usage
+
+- *python image_gui.py* to run the image super resolution demo 
+- *python audio.gui.py* to run the audio super resolution demo 
 
