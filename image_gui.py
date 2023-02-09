@@ -199,29 +199,35 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
             channel = "rgb"
 
         if self.selection == 'YCbCr GAN Perceptual-Loss':
+            self.model = keras.models.load_model('models/img_models/generator_ycbcr_x4.h5', compile=False)
             name = 'YCbCr GAN'
             channel = 'ycbcr'
             pass
 
-        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel, fix=self.fix_selection,
-                                              model_name=name)
-
-        if (self.fix_selection == 'RGB correction') and (self.selection == 'RGB GAN Perceptual-Loss'):
-            print('rgb gan fix function')
-
-        #if fix == 'YCbCr correction' and model_name == 'YCbCr GAN Perceptual-Loss':
-        #    print('ycbcr gan fix function')
-        #    pass
+        self.prediction = utils.upscale_image(self.model, self.lowres_input, channels=channel)
 
         img_array = tf.keras.preprocessing.image.img_to_array(self.prediction)
         sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
-        img_array = img_array.astype("float32") / 255.0
 
+        if self.fix_selection == 'YCbCr correction' and self.selection == 'YCbCr GAN Perceptual-Loss':
+            self.selection = self.selection + " with added correction"
+            img_array = utils.gan_ycbcr_correction(self.prediction, self.image)
+            img_array = tf.keras.preprocessing.image.img_to_array(img_array)
+            sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
+            print('ycbcr gan fix function')
+
+        if (self.fix_selection == 'RGB correction') and (self.selection == 'RGB GAN Perceptual-Loss'):
+            self.selection = self.selection + " with added correction"
+            img_array = utils.gan_rgb_correction(img_array // 1, self.image)
+            sr_psnr = tf.image.psnr(img_array, highres_img_arr, max_val=255)
+            print('rgb gan fix function')
+
+        img_array = img_array.astype("float32") / 255.0
         # Create a new figure with a default 111 subplot.
         fig, ax = plt.subplots()
         im = ax.imshow(img_array[::-1], origin="lower")
 
-        plt.title('SuperRezzed with '+ self.selection + ' | PSNR: '+ str(sr_psnr.numpy()))
+        plt.title('SuperRezzed with '+ self.selection + ' | PSNR: ' + str(sr_psnr.numpy()))
         plt.axis('off')
         # zoom-factor: 2.0, location: upper-left
         axins = zoomed_inset_axes(ax, 2, loc=2)

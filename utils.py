@@ -52,6 +52,7 @@ def preprocessing(dataset, channel="rgb", ds_factor=4, scale=True):
     if channel == "ycbcr":
         dataset = dataset.map(lambda x: rgb_to_ycbcr(x))
 
+
 def get_lowres_image(img, upscale_factor=4):
     """Return low-resolution image to use as model input."""
     return img.resize(
@@ -60,14 +61,12 @@ def get_lowres_image(img, upscale_factor=4):
     )
 
 
-def upscale_image(model, img, channels="rgb", fix='None', model_name='None'):
+def upscale_image(model, img, channels="rgb"):
     """Predict the result based on input image and restore the image as RGB."""
-    print(model_name)
-    print(fix)
     up_factor = 4
     if channels == "rgb":
         y = tf.keras.preprocessing.image.img_to_array(img)
-        #y = y.astype("float32") / 255.0
+        # y = y.astype("float32") / 255.0
         input = np.expand_dims(y, axis=0)
 
         out = model.predict(input)
@@ -84,7 +83,7 @@ def upscale_image(model, img, channels="rgb", fix='None', model_name='None'):
         ycbcr = img.convert("YCbCr")
         y, cb, cr = ycbcr.split()
         y = tf.keras.preprocessing.image.img_to_array(y)
-        #y = y.astype("float32") / 255.0
+        # y = y.astype("float32") / 255.0
 
         input = np.expand_dims(y, axis=0)
         out = model.predict(input)
@@ -104,6 +103,123 @@ def upscale_image(model, img, channels="rgb", fix='None', model_name='None'):
 
     return out_img
 
+
+def gan_rgb_correction(img, highres):
+    up_factor = 4
+    lowres_input = get_lowres_image(highres, up_factor)
+    w = lowres_input.size[0] * up_factor
+    h = lowres_input.size[1] * up_factor
+
+    predict_img_arr = img
+    predict_img_arr = tf.keras.preprocessing.image.img_to_array(img)
+    predict_img_arr = (((predict_img_arr - np.min(predict_img_arr)) / (
+               np.max(predict_img_arr) - np.min(predict_img_arr))) * 255.0) // 1
+
+    predict_reducted = get_lowres_image(tf.keras.preprocessing.image.array_to_img(img), up_factor)
+    predict_reducted = tf.keras.preprocessing.image.img_to_array(predict_reducted)
+
+    difference = tf.keras.preprocessing.image.img_to_array(lowres_input) - predict_reducted
+    difference_upscaled = tf.keras.preprocessing.image.img_to_array(
+        tf.keras.preprocessing.image.array_to_img(difference).resize((w, h)))
+
+    final_result = predict_img_arr + difference_upscaled
+    final_result = (((final_result - np.min(final_result)) / (np.max(final_result) - np.min(final_result))) * 255.) // 1
+
+    # Brightness
+    b0 = 3
+    b1 = 3
+    b2 = 2
+    # Contrast
+    c0 = 22
+    c1 = 25
+    c2 = 23
+    # Gamma
+    g0 = 0.89
+    g1 = 0.91
+    g2 = 0.93
+
+    final_result[:, :, 0] = img_adjust_RGB(final_result[:, :, 0], b0, c0, g0)
+    final_result[:, :, 1] = img_adjust_RGB(final_result[:, :, 1], b1, c1, g1)
+    final_result[:, :, 2] = img_adjust_RGB(final_result[:, :, 2], b2, c2, g2)
+
+    return final_result
+
+
+def img_adjust_RGB(x, brightness, contrast, gamma):
+    brightness = brightness / 255
+    slant = np.tan((contrast / 127 + 1) * np.pi / 4)
+
+    # Adjust (GIMP method)
+    if (brightness < 0):
+        x = x * (1 + brightness)
+    else:
+        x = x + ((127 - x) * brightness)
+
+    x = (x - 127) * slant + 127
+
+    x = np.clip(x, 0, 255) / 255.
+
+    x = ((x ** gamma) * 255) // 1
+
+    return x
+
+def gan_ycbcr_correction(img, highres):
+    up_factor=4
+    lowres_input = get_lowres_image(highres, up_factor)
+    w = lowres_input.size[0] * up_factor
+    h = lowres_input.size[1] * up_factor
+    prediction = img
+
+    # Riconverti nello spazio YCbCr
+    predict_img_YCbCr = prediction.convert("YCbCr")
+    lowres_img_YCbCr = lowres_input.convert("YCbCr")
+
+    predict_img_arr_YCbCr = tf.keras.preprocessing.image.img_to_array(predict_img_YCbCr)
+
+    predict_reducted = get_lowres_image(predict_img_YCbCr, up_factor)
+    predict_reducted = tf.keras.preprocessing.image.img_to_array(predict_reducted)
+
+    difference = lowres_img_YCbCr - predict_reducted
+    difference_upscaled =  tf.keras.preprocessing.image.img_to_array(tf.keras.preprocessing.image.array_to_img(difference).resize((w, h)))
+
+    first_correction = predict_img_arr_YCbCr + difference_upscaled
+    first_correction = (((first_correction - np.min(first_correction))/(np.max(first_correction)-np.min(first_correction)))*255.)//1
+
+
+    #Brightness
+    bY = 2
+    #Contrast
+    cY = 19
+    #Gamma
+    gY = 0.95
+
+    Y_hat = img_adjust_YCbCr(first_correction[:,:,0],bY,cY,gY)
+    Y = PIL.Image.fromarray(np.uint8(Y_hat), mode="L")
+    Cb = PIL.Image.fromarray(np.uint8(predict_img_arr_YCbCr[:,:,1]), mode="L")
+    Cr = PIL.Image.fromarray(np.uint8(predict_img_arr_YCbCr[:,:,2]), mode="L")
+
+    # Di nuovo nello spazio RGB per il plot
+    final_result = PIL.Image.merge("YCbCr", (Y, Cb, Cr)).convert("RGB")
+
+    return final_result
+def img_adjust_YCbCr(x, brightness, contrast, gamma):
+
+    brightness = brightness / 255;
+    slant = np.tan((contrast/127 + 1) * np.pi/4);
+
+    #Adjust (GIMP method)
+    if (brightness < 0):
+      x = x * (1 + brightness);
+    else:
+      x = x + ((127 - x) * brightness);
+
+    x = (x - 127) * slant + 127;
+
+    x = np.clip(x,0,255)/255.
+
+    x = ((x**gamma)*255)//1
+
+    return x
 def upsample(x_lr, r):
     x_lr = x_lr.flatten()
     x_hr_len = len(x_lr) * r
@@ -117,8 +233,9 @@ def upsample(x_lr, r):
 
     return x_sp
 
+
 def preprocess(file_list, start, end, sr=48000, scale=6, dimension=256, stride=256, tag='test'):
-    #random.shuffle(file_list)
+    # random.shuffle(file_list)
     data_size = end - start + 1
     lr_patches = list()
     hr_patches = list()
@@ -174,12 +291,14 @@ def preprocess(file_list, start, end, sr=48000, scale=6, dimension=256, stride=2
 
     return lr_patches, hr_patches, dataset_name
 
+
 def load_model(model, weights_file, load_weights=False):
     if load_weights:
         print(weights_file)
         model.load_weights(weights_file)
         print('load model weights success!')
     return model
+
 
 def SNR(y_true, y_pred):
     P = y_pred
@@ -190,15 +309,18 @@ def SNR(y_true, y_pred):
     avg_snr = K.mean(snr)
     return avg_snr
 
+
 def sum_loss(y_true, y_pred):
     P = y_pred
     Y = y_true
     loss = K.sum((P - Y) ** 2)
     return loss
 
+
 def compile_model(model):
     model.compile(loss='mse', optimizer="adam", metrics=[sum_loss, SNR])
     return model
+
 
 def load_wav_list(dirname):
     file_list = []
@@ -210,7 +332,6 @@ def load_wav_list(dirname):
             full_filename = os.path.join(dirname, filename)
             file_list.append(full_filename)
 
-
     print('load flac list examples..')
 
     for i, file in enumerate(file_list):
@@ -219,6 +340,7 @@ def load_wav_list(dirname):
         if i > 5: break
 
     return file_list
+
 
 def audio(audio_path, type):
     BATCH_SIZE = 256
@@ -229,7 +351,7 @@ def audio(audio_path, type):
     audio_path = audio_path[0:last_slash[-1]]
     print('path: ' + audio_path)
     if type == "single":
-        WEIGHTS_FILE = 'asr-weights-k32.hdf5'
+        WEIGHTS_FILE = 'asr-weights-k32-stride64.hdf5'
         model = base_model(summary=False)
         model = load_model(model, os.path.join(WEIGHTS_PATH, WEIGHTS_FILE), load_weights=LOAD_WEIGHTS)
         model = compile_model(model)
@@ -265,10 +387,12 @@ def audio(audio_path, type):
     audio_path = audio_path + type
     sf.write(audio_path + 'original.flac', Y.flatten(), 48000, 'PCM_24')
     sf.write(audio_path + 'downsampled.flac', X.flatten(), 48000, 'PCM_24')
-    sf.write(audio_path +'superrezzed.flac', pred.flatten(), 48000, 'PCM_24')
+    sf.write(audio_path + 'superrezzed.flac', pred.flatten(), 48000, 'PCM_24')
+
 
 def split(x):
     return x[:, 28:36]  # it is fixed range for input(64) & output(8) dataset
+
 
 def SubPixel1D(input_shape, r, color=False):
     def _phase_shift(I, r=2):
@@ -290,6 +414,7 @@ def SubPixel1D(input_shape, r, color=False):
         return x_upsampled
 
     return Lambda(subpixel, output_shape=subpixel_shape)
+
 
 def base_model(summary=True):
     print('load base model..')
@@ -393,17 +518,22 @@ def base_model(summary=True):
 
     return model
 
+
 def denorm_n11_01(x):
-    return tf.math.scalar_mul(1/2,tf.math.add(x,1))
+    return tf.math.scalar_mul(1 / 2, tf.math.add(x, 1))
+
 
 def denorm_n11_255(x):
-    return tf.math.scalar_mul(127.5,tf.math.add(x,1))
+    return tf.math.scalar_mul(127.5, tf.math.add(x, 1))
+
 
 def norm_n11(x):
-    return tf.math.subtract(tf.math.scalar_mul(1/127.5,x),1)
+    return tf.math.subtract(tf.math.scalar_mul(1 / 127.5, x), 1)
+
 
 def norm_01(x):
-    return tf.math.scalar_mul(1/255.0,x)
+    return tf.math.scalar_mul(1 / 255.0, x)
+
 
 def denorm_01_255(x):
-    return tf.math.scalar_mul(255.0,x)
+    return tf.math.scalar_mul(255.0, x)
