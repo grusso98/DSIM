@@ -296,7 +296,7 @@ class Ui_MainWindow(PyQt5.QtWidgets.QMainWindow):
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Image SuperRezzer"))
+        MainWindow.setWindowTitle(_translate("MainWindow", "Super Resolution Demo"))
         self.pushButton_2.setText(_translate("MainWindow", "Open"))
         self.pushButton.setText(_translate("MainWindow", "SuperRes Image"))
         self.pushButton_3.setText(_translate("MainWindow", "Bicubic Image"))
