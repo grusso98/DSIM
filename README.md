@@ -12,7 +12,20 @@ Authors: Gaetano Chiriaco, Riccardo Porcedda, Gianmarco Russo | Data Science MSc
 Be sure to install all the libraries indicated in requirements.txt
 
 # Usage
+```sh
+pip install requirements.txt
+```
+to install the required packages.
+```sh
+python image_gui.py
+```
+to run the image super resolution demo:
+![alt text](https://i.postimg.cc/SQPXQYy5/Schermata-2023-02-16-alle-10-10-19.png)
 
-- *python image_gui.py* to run the image super resolution demo 
-- *python audio.gui.py* to run the audio super resolution demo 
+```sh
+python audio_gui.py
+```
+to run the audio super resolution demo:
+![alt text](https://i.postimg.cc/fR1nJZ3M/Schermata-2023-02-16-alle-10-10-52.png)
 
+Note: being a demo, this repository does not contain the training code, but provides the trained models to test them.
