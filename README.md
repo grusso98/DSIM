@@ -1,6 +1,5 @@
 ![alt text](https://github.com/grusso98/DSIM/blob/master/banner.jpg?raw=true)
 ### Digital signal and image management exam demo
-Authors
 ### Authors:
   <div align="center">
     <p>Gaetano Chiriaco</p>
