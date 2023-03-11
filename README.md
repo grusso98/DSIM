@@ -1,4 +1,5 @@
-# Digital signal and image management exam demo
+![alt text]https://github.com/grusso98/DSIM/blob/master/banner.jpg?raw=true)
+### Digital signal and image management exam demo
 Authors: Gaetano Chiriaco, Riccardo Porcedda, Gianmarco Russo | Data Science MSc @ University of Milan-Bicocca.
 
 # Image and Audio SuperResolution using CNN and GANs.
